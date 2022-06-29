@@ -1,45 +1,112 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteUser = exports.putUser = exports.postUser = exports.getUser = exports.getUsers = void 0;
-const express_1 = require("express");
-const getUsers = (req, res = express_1.response) => {
-    res.json({
-        msg: 'getUsuarios'
-    });
-};
-exports.getUsers = getUsers;
-const getUser = (req, res = express_1.response) => {
-    const { id } = req.params;
+const user_1 = __importDefault(require("../models/user"));
+const getUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    //Regresa una promesa
+    const users = yield user_1.default.findAll();
     res.json({
         msg: 'getUsuarios',
-        id
+        users
     });
-};
+});
+exports.getUsers = getUsers;
+const getUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const user = yield user_1.default.findByPk(id);
+    if (user) {
+        res.json({
+            msg: 'getUsuarios',
+            user
+        });
+    }
+    else {
+        res.status(404).json({
+            msg: `No existe usuario con el id ${id}`
+        });
+    }
+});
 exports.getUser = getUser;
-const postUser = (req, res = express_1.response) => {
+const postUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { body } = req;
-    res.json({
-        msg: 'postUser',
-        body
-    });
-};
+    try {
+        const existeEmail = yield user_1.default.findOne({
+            where: {
+                email: body.email
+            }
+        });
+        if (existeEmail) {
+            return res.status(400).json({
+                msg: 'ya existe usuario con email ' + body.email
+            });
+        }
+        const user = user_1.default.build(body);
+        yield user.save();
+        //const user = await User.create(body); //otra forma
+        res.json({
+            msg: 'postUser',
+            user
+        });
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).json({
+            msg: 'hable con el administrador'
+        });
+    }
+});
 exports.postUser = postUser;
-const putUser = (req, res = express_1.response) => {
+const putUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     const { body } = req;
-    res.json({
-        msg: 'putUser',
-        body,
-        id
-    });
-};
+    try {
+        const user = yield user_1.default.findByPk(id);
+        if (!user) {
+            return res.status(404).json({
+                msg: 'No existe un usuario con el id ' + id
+            });
+        }
+        yield user.update(body);
+        res.json({
+            msg: 'postUser',
+            user
+        });
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).json({
+            msg: 'hable con el administrador'
+        });
+    }
+});
 exports.putUser = putUser;
-const deleteUser = (req, res = express_1.response) => {
+const deleteUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
+    const user = yield user_1.default.findByPk(id);
+    if (!user) {
+        return res.status(404).json({
+            msg: 'no existe usuario con el id ' + id
+        });
+    }
+    //eliminación física
+    //await user.destroy();
+    yield user.update({ estado: false });
     res.json({
         msg: 'deleteUser',
         id
     });
-};
+});
 exports.deleteUser = deleteUser;
 //# sourceMappingURL=users.controllers.js.map
